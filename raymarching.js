@@ -33,7 +33,7 @@ const sketch = ({ context }) => {
     -1000,
     1000
   );
-  camera.position.set(0, 0, -4);
+  camera.position.set(0, 0, -5);
   camera.lookAt(new THREE.Vector3());
 
   // Setup your scene

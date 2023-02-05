@@ -3,14 +3,14 @@ varying vec2 vUv;
 uniform vec4 resolution;
 
 const int noInterations = 256;
-const float epsilson = 0.001;
+const float epsilson = 0.005;
 const vec2 h = vec2(epsilson, 0.0);
 const vec3 lightPos = vec3(1.0);
 
 //mandlebulb constants
-const int mbIterations = 6;
-const float mbBailout = 1.0015;
-const float mbPower = 6.0;
+const int mbIterations = 8;
+const float mbBailout = 1.002;
+const float mbPower = 5.0;
 // uniform int mbIterations;
 // uniform float mbBailout;
 // uniform float mbPower;
@@ -31,7 +31,7 @@ float sdfMandlebulb(vec3 pos) {
 	vec3 z = pos;
 	float dr = 1.0;
 	float r = 0.0;
-  float power = (sin(time) + 1.5) * mbPower;
+  float power = (sin(time * 0.5) + 1.5) * mbPower;
 
 	for (int i = 0; i < mbIterations ; i++) {
 		r = length(z);
@@ -77,6 +77,7 @@ void main () {
   float t = 0.0;
   float tMax = 5.0;
   float closenessValue = 0.0001;
+
   for (int i = 0; i < noInterations; i++) {
     vec3 pos = cameraPos + t * rayDir;
     float dist = sdf(pos);
