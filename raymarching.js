@@ -6,6 +6,9 @@ const canvasSketch = require("canvas-sketch");
 import frag from "./fragment.glsl";
 import vert from "./vertex.glsl";
 
+const matcap_shiny_red = "./resources/matcap_shiny_red.jpeg";
+const matcap_pink = "./resources/matcap_pink.jpeg";
+
 const settings = {
   // Make the loop animated
   animate: true,
@@ -18,6 +21,8 @@ const sketch = ({ context }) => {
   const renderer = new THREE.WebGLRenderer({
     canvas: context.canvas,
   });
+
+  const textureLoader = new THREE.TextureLoader();
 
   // WebGL background color
   renderer.setClearColor("#000", 1);
@@ -52,6 +57,9 @@ const sketch = ({ context }) => {
       mbBailout: 6.0,
       mbPower: 6.0,
       time: { value: 0.0 },
+      matcap: {
+        value: textureLoader.load(matcap_shiny_red),
+      },
     },
     side: THREE.DoubleSide,
   });

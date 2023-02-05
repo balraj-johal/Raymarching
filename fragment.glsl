@@ -1,6 +1,7 @@
 varying vec2 vUv;
 
 uniform vec4 resolution;
+uniform sampler2D matcap;
 
 const int noInterations = 256;
 const float epsilson = 0.005;
@@ -9,7 +10,7 @@ const vec3 lightPos = vec3(1.0);
 
 //mandlebulb constants
 const int mbIterations = 8;
-const float mbBailout = 1.002;
+const float mbBailout = 1.000225;
 const float mbPower = 5.0;
 // uniform int mbIterations;
 // uniform float mbBailout;
@@ -31,7 +32,7 @@ float sdfMandlebulb(vec3 pos) {
 	vec3 z = pos;
 	float dr = 1.0;
 	float r = 0.0;
-  float power = (sin(time * 0.5) + 1.5) * mbPower;
+  float power = (sin(time * 0.25) + 1.5) * mbPower;
 
 	for (int i = 0; i < mbIterations ; i++) {
 		r = length(z);
@@ -52,6 +53,12 @@ float sdfMandlebulb(vec3 pos) {
 		z+=pos;
 	}
 	return 0.5 * log(r) * r/dr;
+}
+
+vec2 getMatcap(vec3 eye, vec3 normal) {
+  vec3 reflected = reflect(eye, normal);
+  float m = 2.8284271247461903 * sqrt( reflected.z+1.0 );
+  return reflected.xy / m + 0.5;
 }
 
 // build scene
@@ -89,7 +96,10 @@ void main () {
     vec3 pos = cameraPos + t * rayDir;
     vec3 normal = getNormalAtPoint(pos);
     float diff = dot(lightPos, normal);
-    color = vec3(diff);
+    // color = vec3(diff);
+    vec2 matcapUV = getMatcap(rayDir, normal);
+
+    color = texture2D(matcap, matcapUV).rgb;
   }
 
   gl_FragColor = vec4(color, 1.0);
