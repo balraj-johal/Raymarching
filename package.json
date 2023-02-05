@@ -5,8 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "npx canvas-sketch-cli ./raymarching.js --open",
-    "build": "npx canvas-sketch-cli ./raymarching.js --dir public --build --no-compress"
+    "dev": "npx canvas-sketch-cli ./index.js --open",
+    "build": "npx canvas-sketch-cli ./index.js --dir public --build --no-compress"
   },
   "keywords": [],
   "author": "Balraj Johal",
