@@ -48,6 +48,10 @@ const sketch = ({ context }) => {
     fragmentShader: frag,
     uniforms: {
       resolution: new THREE.Vector4(),
+      // mbIterations: 1,
+      mbBailout: 6.0,
+      mbPower: 6.0,
+      time: { value: 0.0 },
     },
     side: THREE.DoubleSide,
   });
@@ -86,6 +90,7 @@ const sketch = ({ context }) => {
     },
     // Update & render your scene here
     render({ time }) {
+      material.uniforms.time.value = time;
       renderer.render(scene, camera);
     },
     // Dispose of events & renderer for cleaner hot-reloading
