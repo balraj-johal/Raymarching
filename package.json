@@ -1,13 +1,15 @@
 {
-  "name": "github",
+  "name": "raymarching_fractals",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "npx canvas-sketch-cli ./raymarching.js --open",
+    "build": "npx canvas-sketch-cli ./raymarching.js --build"
   },
   "keywords": [],
-  "author": "",
+  "author": "Balraj Johal",
   "license": "ISC",
   "dependencies": {
     "canvas-sketch": "^0.7.6",

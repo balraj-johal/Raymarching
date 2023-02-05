@@ -46,7 +46,9 @@ const sketch = ({ context }) => {
   const material = new THREE.ShaderMaterial({
     vertexShader: vert,
     fragmentShader: frag,
-    uniforms: {},
+    uniforms: {
+      resolution: new THREE.Vector4(),
+    },
     side: THREE.DoubleSide,
   });
   material.uniformsNeedUpdate = true;
@@ -63,6 +65,24 @@ const sketch = ({ context }) => {
       renderer.setSize(viewportWidth, viewportHeight, false);
       camera.aspect = viewportWidth / viewportHeight;
       camera.updateProjectionMatrix();
+
+      console.log(material.uniforms.resolution);
+      if (material.uniforms.resolution) {
+        material.uniforms.resolution.x = viewportWidth;
+        material.uniforms.resolution.y = viewportHeight;
+        let resolutionZ;
+        let resolutionW;
+        if (viewportHeight / viewportWidth > 1) {
+          resolutionZ = viewportWidth / viewportHeight;
+          resolutionW = 1;
+        } else {
+          resolutionZ = 1;
+          resolutionW = viewportWidth / viewportHeight;
+        }
+        material.uniforms.resolution.z = resolutionZ;
+        material.uniforms.resolution.w = resolutionW;
+        console.log("in if:", material.uniforms.resolution);
+      }
     },
     // Update & render your scene here
     render({ time }) {
