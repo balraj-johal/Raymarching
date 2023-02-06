@@ -86,13 +86,34 @@ vec3 rotate(vec3 v, vec3 axis, float angle) {
 	return (m * vec4(v, 1.0)).xyz;
 }
 
+// Signed Distance Field of a torus
+float sdfRotatingTorus(vec3 position, vec2 t) {
+  vec2 q = vec2(length(position.xz) - t.x, position.y);
+  vec3 rotatedOverTime = rotate(position, vec3(0.0, 1.0, 1.0), time);
+  return length(q) - t.y;
+}
+// infinite repetition: https://iquilezles.org/articles/distfunctions/
+vec3 infiniteTorus( vec3 p, vec3 c )
+{
+    vec3 q = mod(p+0.5*c,c)-0.5*c;
+    return q;
+}
+
 // build scene
 float sdf(vec3 position) {
   vec3 correctedMouse = vec3(mouseCoords.xy * resolution.zw, 0.0);
   float movingSphere = sdfSphere(position + correctedMouse, 0.2);
   vec3 rotatedOverTime = rotate(position, vec3(0.0, 1.0, 1.0), time);
-  float torus = sdfTorus(rotatedOverTime, vec2(0.35, 0.05));
-  return smin(movingSphere, torus, 0.1);
+  // float torus = sdfTorus(rotatedOverTime, vec2(0.35, 0.05));
+  vec3 toruses = infiniteTorus(position, vec3(1.0));
+  vec3 rotatedTouruses = rotate(toruses, vec3(0.0, 1.0, 1.0), time);
+  float sdfToruses = sdfTorus(rotatedTouruses, vec2(0.35, 0.05));
+
+  float scene = 1.0;
+  scene = smin(scene, movingSphere, 0.1);
+  // scene = smin(scene, torus, 0.1);
+  scene = smin(scene, sdfToruses, 0.1);
+  return scene;
 }
 
 // also nicked
