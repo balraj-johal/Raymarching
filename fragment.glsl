@@ -124,13 +124,17 @@ void main () {
   float t = 0.0;
   float tMax = 5.0;
   float closenessValue = 0.0001;
+  float finalIters = 0.0;
 
   for (int i = 0; i < noInterations; i++) {
     vec3 pos = cameraPos + t * rayDir;
     float dist = sdf(pos);
+    finalIters = float(i);
     if (dist < closenessValue || t > tMax) break;
     t += dist;
   }
+
+  finalIters = finalIters / float(noInterations);
 
   if (t < tMax) {
     vec3 pos = cameraPos + t * rayDir;
@@ -139,6 +143,9 @@ void main () {
     vec2 matcapUV = getMatcap(rayDir, normal);
 
     color = texture2D(matcap, matcapUV).rgb;
+    if (finalIters > 0.15) {
+      color += vec3(pow(finalIters, 1.0));
+    }
   }
 
   gl_FragColor = vec4(color, 1.0);
