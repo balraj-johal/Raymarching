@@ -52,7 +52,7 @@ const sketch = ({ context }) => {
     vertexShader: vert,
     fragmentShader: frag,
     uniforms: {
-      resolution: new THREE.Vector4(),
+      resolution: { value: new THREE.Vector4() },
       // mbIterations: 1,
       mbBailout: 6.0,
       mbPower: 6.0,
@@ -78,21 +78,20 @@ const sketch = ({ context }) => {
       camera.aspect = viewportWidth / viewportHeight;
       camera.updateProjectionMatrix();
 
-      console.log(material.uniforms.resolution);
       if (material.uniforms.resolution) {
-        material.uniforms.resolution.x = viewportWidth;
-        material.uniforms.resolution.y = viewportHeight;
-        let resolutionZ;
-        let resolutionW;
+        material.uniforms.resolution.value.x = viewportWidth;
+        material.uniforms.resolution.value.y = viewportHeight;
+        let a1;
+        let a2;
         if (viewportHeight / viewportWidth > 1) {
-          resolutionZ = viewportWidth / viewportHeight;
-          resolutionW = 1;
+          a1 = viewportWidth / viewportHeight;
+          a2 = 1;
         } else {
-          resolutionZ = 1;
-          resolutionW = viewportWidth / viewportHeight;
+          a1 = 1;
+          a2 = viewportHeight / viewportWidth;
         }
-        material.uniforms.resolution.z = resolutionZ;
-        material.uniforms.resolution.w = resolutionW;
+        material.uniforms.resolution.value.z = a1;
+        material.uniforms.resolution.value.w = a2;
         console.log("in if:", material.uniforms.resolution);
       }
     },

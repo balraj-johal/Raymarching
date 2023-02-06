@@ -12,9 +12,6 @@ const vec3 lightPos = vec3(1.0);
 const int mbIterations = 8;
 const float mbBailout = 1.000225;
 const float mbPower = 5.0;
-// uniform int mbIterations;
-// uniform float mbBailout;
-// uniform float mbPower;
 uniform float time;
 
 // Signed Distance Field of a torus
@@ -65,7 +62,7 @@ vec2 getMatcap(vec3 eye, vec3 normal) {
 float sdf(vec3 position) {
   float sphere = sdfSphere(position, 0.2);
   float mandlebulb = sdfMandlebulb(position);
-  return mandlebulb;
+  return sphere;
 }
 
 vec3 getNormalAtPoint(vec3 point) {
@@ -78,7 +75,8 @@ void main () {
   vec3 colorNice = vec3(0.388, 0.333, 0.184);
   vec3 color = vec3(0.0);
   vec3 cameraPos = vec3(0.0, 0.0, 2.5);
-  vec3 rayDir = normalize(vec3((vUv - vec2(0.5)) * vec2(1, 1), -1.0)); // -1 z value is to ensure the ray is cast from camera to origin
+  vec2 correctedUV = (vUv - vec2(0.5)) * resolution.zw;
+  vec3 rayDir = normalize(vec3(correctedUV, -1.0)); // -1 z value is to ensure the ray is cast from camera to origin
 
   vec3 rayPos = cameraPos;
   float t = 0.0;
@@ -103,5 +101,4 @@ void main () {
   }
 
   gl_FragColor = vec4(color, 1.0);
-  // if (resolution.y > 0.0) gl_FragColor = vec4(resolution);
 }
