@@ -1,7 +1,9 @@
 varying vec2 vUv;
 
 uniform vec4 resolution;
-uniform vec2 mouseCoords;
+uniform vec2 sphere1;
+uniform vec2 sphere2;
+uniform vec2 sphere3;
 uniform sampler2D matcap;
 
 const int noInterations = 256;
@@ -88,11 +90,20 @@ vec3 rotate(vec3 v, vec3 axis, float angle) {
 
 // build scene
 float sdf(vec3 position) {
-  vec3 correctedMouse = vec3(mouseCoords.xy * resolution.zw, 0.0);
-  float movingSphere = sdfSphere(position + correctedMouse, 0.2);
-  vec3 rotatedOverTime = rotate(position, vec3(0.0, 1.0, 1.0), time);
-  float torus = sdfTorus(rotatedOverTime, vec2(0.35, 0.05));
-  return smin(movingSphere, torus, 0.1);
+  vec3 correctedS1 = vec3(sphere1.xy * resolution.zw, 0.0);
+  float sphere1 = sdfSphere(position + correctedS1, 0.2);
+
+  vec3 correctedS2 = vec3(sphere2.xy * resolution.zw, 0.0);
+  float sphere2 = sdfSphere(position + correctedS2, 0.175);
+
+  vec3 correctedS3 = vec3(sphere3.xy * resolution.zw, 0.0);
+  float sphere3 = sdfSphere(position + correctedS3, 0.15);
+
+  float scene = 1.0;
+  scene = smin(scene, sphere1, 0.2);
+  scene = smin(scene, sphere2, 0.2);
+  scene = smin(scene, sphere3, 0.2);
+  return scene;
 }
 
 // also nicked

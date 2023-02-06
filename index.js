@@ -8,6 +8,13 @@ import vert from "./vertex.glsl";
 
 const matcap_shiny_red = "./resources/matcap_shiny_red.jpeg";
 const matcap_pink = "./resources/matcap_pink.jpeg";
+const matcap_green = "./resources/matcap_green.png";
+const matcap_angel = "./resources/matcap_angel.png";
+const matcap_solar = "./resources/matcap_solar.png";
+
+const lerp = (a, b, t) => {
+  return a + (b - a) * t;
+};
 
 const settings = {
   // Make the loop animated
@@ -47,19 +54,25 @@ const sketch = ({ context }) => {
   // Setup a geometry
   const geometry = new THREE.PlaneGeometry(frustumSize, frustumSize, 1, 1);
 
+  const sphere1 = new THREE.Vector2();
+  const sphere2 = new THREE.Vector2();
+  const sphere3 = new THREE.Vector2();
+  const mouse = new THREE.Vector2();
   // Setup a material
   const material = new THREE.ShaderMaterial({
     vertexShader: vert,
     fragmentShader: frag,
     uniforms: {
       resolution: { value: new THREE.Vector4() },
-      mouseCoords: { value: new THREE.Vector2() },
+      sphere1: { value: sphere1 },
+      sphere2: { value: sphere2 },
+      sphere3: { value: sphere3 },
       // mbIterations: 1,
       mbBailout: 6.0,
       mbPower: 6.0,
       time: { value: 0.0 },
       matcap: {
-        value: textureLoader.load(matcap_shiny_red),
+        value: textureLoader.load(matcap_green),
       },
     },
     side: THREE.DoubleSide,
@@ -80,10 +93,8 @@ const sketch = ({ context }) => {
       camera.updateProjectionMatrix();
 
       const mouseListener = (e) => {
-        material.uniforms.mouseCoords.value.x =
-          (e.pageX / viewportWidth) * 2 - 1;
-        material.uniforms.mouseCoords.value.y =
-          (e.pageY / viewportHeight) * 2 - 1;
+        mouse.x = (e.pageX / viewportWidth) * 2 - 1;
+        mouse.y = (e.pageY / viewportHeight) * 2 - 1;
       };
       window.removeEventListener("mousemove", mouseListener);
 
@@ -109,6 +120,16 @@ const sketch = ({ context }) => {
     // Update & render your scene here
     render({ time }) {
       material.uniforms.time.value = time;
+
+      sphere1.x = lerp(sphere1.x, mouse.x, 0.05);
+      sphere1.y = lerp(sphere1.y, mouse.y, 0.05);
+
+      sphere2.x = lerp(sphere2.x, sphere1.x, 0.1);
+      sphere2.y = lerp(sphere2.y, sphere1.y, 0.1);
+
+      sphere3.x = lerp(sphere3.x, sphere2.x, 0.1);
+      sphere3.y = lerp(sphere3.y, sphere2.y, 0.1);
+
       renderer.render(scene, camera);
     },
     // Dispose of events & renderer for cleaner hot-reloading
