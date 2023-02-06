@@ -72,7 +72,7 @@ const sketch = ({ context }) => {
       mbPower: 6.0,
       time: { value: 0.0 },
       matcap: {
-        value: textureLoader.load(matcap_green),
+        value: textureLoader.load(matcap_angel),
       },
     },
     side: THREE.DoubleSide,
@@ -114,7 +114,6 @@ const sketch = ({ context }) => {
         }
         material.uniforms.resolution.value.z = a1;
         material.uniforms.resolution.value.w = a2;
-        console.log("in if:", material.uniforms.resolution);
       }
     },
     // Update & render your scene here

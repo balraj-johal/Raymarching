@@ -17,7 +17,6 @@ const float mbBailout = 1.000225;
 const float mbPower = 5.0;
 uniform float time;
 
-
 // half the following off IQUILEZ so ty!
 
 // https://iquilezles.org/articles/smin/
