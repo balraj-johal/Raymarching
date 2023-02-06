@@ -1,6 +1,7 @@
 varying vec2 vUv;
 
 uniform vec4 resolution;
+uniform vec2 mouseCoords;
 uniform sampler2D matcap;
 
 const int noInterations = 256;
@@ -13,6 +14,16 @@ const int mbIterations = 8;
 const float mbBailout = 1.000225;
 const float mbPower = 5.0;
 uniform float time;
+
+
+// half the following off IQUILEZ so ty!
+
+// https://iquilezles.org/articles/smin/
+float smin( float a, float b, float k )
+{
+    float h = clamp( 0.5+0.5*(b-a)/k, 0.0, 1.0 );
+    return mix( b, a, h ) - k*h*(1.0-h);
+}
 
 // Signed Distance Field of a torus
 float sdfTorus(vec3 position, vec2 t) {
@@ -52,19 +63,39 @@ float sdfMandlebulb(vec3 pos) {
 	return 0.5 * log(r) * r/dr;
 }
 
+// also nicked off someone: 
 vec2 getMatcap(vec3 eye, vec3 normal) {
   vec3 reflected = reflect(eye, normal);
   float m = 2.8284271247461903 * sqrt( reflected.z+1.0 );
   return reflected.xy / m + 0.5;
 }
 
-// build scene
-float sdf(vec3 position) {
-  float sphere = sdfSphere(position, 0.2);
-  float mandlebulb = sdfMandlebulb(position);
-  return sphere;
+// rotations from: https://gist.github.com/yiwenl/3f804e80d0930e34a0b33359259b556c
+mat4 rotationMatrix(vec3 axis, float angle) {
+    axis = normalize(axis);
+    float s = sin(angle);
+    float c = cos(angle);
+    float oc = 1.0 - c;
+    return mat4(oc * axis.x * axis.x + c,           oc * axis.x * axis.y - axis.z * s,  oc * axis.z * axis.x + axis.y * s,  0.0,
+                oc * axis.x * axis.y + axis.z * s,  oc * axis.y * axis.y + c,           oc * axis.y * axis.z - axis.x * s,  0.0,
+                oc * axis.z * axis.x - axis.y * s,  oc * axis.y * axis.z + axis.x * s,  oc * axis.z * axis.z + c,           0.0,
+                0.0,                                0.0,                                0.0,                                1.0);
+}
+vec3 rotate(vec3 v, vec3 axis, float angle) {
+	mat4 m = rotationMatrix(axis, angle);
+	return (m * vec4(v, 1.0)).xyz;
 }
 
+// build scene
+float sdf(vec3 position) {
+  vec3 correctedMouse = vec3(mouseCoords.xy * resolution.zw, 0.0);
+  float movingSphere = sdfSphere(position + correctedMouse, 0.2);
+  vec3 rotatedOverTime = rotate(position, vec3(0.0, 1.0, 1.0), time);
+  float torus = sdfTorus(rotatedOverTime, vec2(0.35, 0.05));
+  return smin(movingSphere, torus, 0.1);
+}
+
+// also nicked
 vec3 getNormalAtPoint(vec3 point) {
   return normalize(vec3(sdf(point + h.xyy) - sdf(point - h.xyy),
                         sdf(point + h.yxy) - sdf(point - h.yxy),
@@ -94,7 +125,6 @@ void main () {
     vec3 pos = cameraPos + t * rayDir;
     vec3 normal = getNormalAtPoint(pos);
     float diff = dot(lightPos, normal);
-    // color = vec3(diff);
     vec2 matcapUV = getMatcap(rayDir, normal);
 
     color = texture2D(matcap, matcapUV).rgb;

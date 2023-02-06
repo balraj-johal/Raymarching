@@ -53,6 +53,7 @@ const sketch = ({ context }) => {
     fragmentShader: frag,
     uniforms: {
       resolution: { value: new THREE.Vector4() },
+      mouseCoords: { value: new THREE.Vector2() },
       // mbIterations: 1,
       mbBailout: 6.0,
       mbPower: 6.0,
@@ -77,6 +78,16 @@ const sketch = ({ context }) => {
       renderer.setSize(viewportWidth, viewportHeight, false);
       camera.aspect = viewportWidth / viewportHeight;
       camera.updateProjectionMatrix();
+
+      const mouseListener = (e) => {
+        material.uniforms.mouseCoords.value.x =
+          (e.pageX / viewportWidth) * 2 - 1;
+        material.uniforms.mouseCoords.value.y =
+          (e.pageY / viewportHeight) * 2 - 1;
+      };
+      window.removeEventListener("mousemove", mouseListener);
+
+      window.addEventListener("mousemove", mouseListener);
 
       if (material.uniforms.resolution) {
         material.uniforms.resolution.value.x = viewportWidth;
