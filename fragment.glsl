@@ -114,8 +114,13 @@ vec3 getNormalAtPoint(vec3 point) {
 }
 
 void main () {
-  vec3 colorNice = vec3(0.388, 0.333, 0.184);
-  vec3 color = vec3(0.0);
+  // background
+  float distToCenter = length(vUv - vec2(0.5));
+
+  vec3 color1 = vec3(0.9);
+  vec3 color2 = vec3(0.65);
+  vec3 color = mix(color1, color2, distToCenter);
+
   vec3 cameraPos = vec3(0.0, 0.0, 2.5);
   vec2 correctedUV = (vUv - vec2(0.5)) * resolution.zw;
   vec3 rayDir = normalize(vec3(correctedUV, -1.0)); // -1 z value is to ensure the ray is cast from camera to origin
