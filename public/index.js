@@ -1,5 +1,5 @@
 (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
-module.exports = "#define GLSLIFY 1\nvarying vec2 vUv;\n\nuniform vec4 resolution;\nuniform sampler2D matcap;\n\nconst int noInterations = 256;\nconst float epsilson = 0.005;\nconst vec2 h = vec2(epsilson, 0.0);\nconst vec3 lightPos = vec3(1.0);\n\n//mandlebulb constants\nconst int mbIterations = 8;\nconst float mbBailout = 1.000225;\nconst float mbPower = 5.0;\n// uniform int mbIterations;\n// uniform float mbBailout;\n// uniform float mbPower;\nuniform float time;\n\n// Signed Distance Field of a torus\nfloat sdfTorus(vec3 position, vec2 t) {\n  vec2 q = vec2(length(position.xz) - t.x, position.y);\n  return length(q) - t.y;\n}\n\n// Signed Distance Field of a sphere\nfloat sdfSphere(vec3 position, float radius) {\n  return length(position) - radius;\n}\n\nfloat sdfMandlebulb(vec3 pos) {\n\tvec3 z = pos;\n\tfloat dr = 1.0;\n\tfloat r = 0.0;\n  float power = (sin(time * 0.25) + 1.5) * mbPower;\n\n\tfor (int i = 0; i < mbIterations ; i++) {\n\t\tr = length(z);\n\t\tif (r > mbBailout) break;\n\t\t\n\t\t// convert to polar coordinates\n\t\tfloat theta = acos(z.z / r);\n\t\tfloat phi = atan(z.y, z.x);\n\t\tdr = pow(r, power - 1.0) * power * dr + 1.0;\n\t\t\n\t\t// scale and rotate the point\n\t\tfloat zr = pow(r, power);\n\t\ttheta = theta * power;\n\t\tphi = phi * power;\n\t\t\n\t\t// convert back to cartesian coordinates\n\t\tz = zr*vec3(sin(theta)*cos(phi), sin(phi)*sin(theta), cos(theta));\n\t\tz+=pos;\n\t}\n\treturn 0.5 * log(r) * r/dr;\n}\n\nvec2 getMatcap(vec3 eye, vec3 normal) {\n  vec3 reflected = reflect(eye, normal);\n  float m = 2.8284271247461903 * sqrt( reflected.z+1.0 );\n  return reflected.xy / m + 0.5;\n}\n\n// build scene\nfloat sdf(vec3 position) {\n  float sphere = sdfSphere(position, 0.2);\n  float mandlebulb = sdfMandlebulb(position);\n  return mandlebulb;\n}\n\nvec3 getNormalAtPoint(vec3 point) {\n  return normalize(vec3(sdf(point + h.xyy) - sdf(point - h.xyy),\n                        sdf(point + h.yxy) - sdf(point - h.yxy),\n                        sdf(point + h.yyx) - sdf(point - h.yyx)));\n}\n\nvoid main () {\n  vec3 colorNice = vec3(0.388, 0.333, 0.184);\n  vec3 color = vec3(0.0);\n  vec3 cameraPos = vec3(0.0, 0.0, 2.5);\n  vec3 rayDir = normalize(vec3((vUv - vec2(0.5)) * vec2(1, 1), -1.0)); // -1 z value is to ensure the ray is cast from camera to origin\n\n  vec3 rayPos = cameraPos;\n  float t = 0.0;\n  float tMax = 5.0;\n  float closenessValue = 0.0001;\n\n  for (int i = 0; i < noInterations; i++) {\n    vec3 pos = cameraPos + t * rayDir;\n    float dist = sdf(pos);\n    if (dist < closenessValue || t > tMax) break;\n    t += dist;\n  }\n\n  if (t < tMax) {\n    vec3 pos = cameraPos + t * rayDir;\n    vec3 normal = getNormalAtPoint(pos);\n    float diff = dot(lightPos, normal);\n    // color = vec3(diff);\n    vec2 matcapUV = getMatcap(rayDir, normal);\n\n    color = texture2D(matcap, matcapUV).rgb;\n  }\n\n  gl_FragColor = vec4(color, 1.0);\n  // if (resolution.y > 0.0) gl_FragColor = vec4(resolution);\n}";
+module.exports = "#define GLSLIFY 1\nvarying vec2 vUv;\n\nuniform vec4 resolution;\nuniform vec2 sphere1;\nuniform vec2 sphere2;\nuniform vec2 sphere3;\nuniform sampler2D matcap;\n\nconst int noInterations = 256;\nconst float epsilson = 0.005;\nconst vec2 h = vec2(epsilson, 0.0);\nconst vec3 lightPos = vec3(1.0);\n\n//mandlebulb constants\nconst int mbIterations = 8;\nconst float mbBailout = 1.000225;\nconst float mbPower = 5.0;\nuniform float time;\n\n// half the following off IQUILEZ so ty!\n\n// https://iquilezles.org/articles/smin/\nfloat smin( float a, float b, float k )\n{\n    float h = clamp( 0.5+0.5*(b-a)/k, 0.0, 1.0 );\n    return mix( b, a, h ) - k*h*(1.0-h);\n}\n\n// Signed Distance Field of a torus\nfloat sdfTorus(vec3 position, vec2 t) {\n  vec2 q = vec2(length(position.xz) - t.x, position.y);\n  return length(q) - t.y;\n}\n\n// Signed Distance Field of a sphere\nfloat sdfSphere(vec3 position, float radius) {\n  return length(position) - radius;\n}\n\nfloat sdfMandlebulb(vec3 pos) {\n\tvec3 z = pos;\n\tfloat dr = 1.0;\n\tfloat r = 0.0;\n  float power = (sin(time * 0.25) + 1.5) * mbPower;\n\n\tfor (int i = 0; i < mbIterations ; i++) {\n\t\tr = length(z);\n\t\tif (r > mbBailout) break;\n\t\t\n\t\t// convert to polar coordinates\n\t\tfloat theta = acos(z.z / r);\n\t\tfloat phi = atan(z.y, z.x);\n\t\tdr = pow(r, power - 1.0) * power * dr + 1.0;\n\t\t\n\t\t// scale and rotate the point\n\t\tfloat zr = pow(r, power);\n\t\ttheta = theta * power;\n\t\tphi = phi * power;\n\t\t\n\t\t// convert back to cartesian coordinates\n\t\tz = zr*vec3(sin(theta)*cos(phi), sin(phi)*sin(theta), cos(theta));\n\t\tz+=pos;\n\t}\n\treturn 0.5 * log(r) * r/dr;\n}\n\n// also nicked off someone: \nvec2 getMatcap(vec3 eye, vec3 normal) {\n  vec3 reflected = reflect(eye, normal);\n  float m = 2.8284271247461903 * sqrt( reflected.z+1.0 );\n  return reflected.xy / m + 0.5;\n}\n\n// rotations from: https://gist.github.com/yiwenl/3f804e80d0930e34a0b33359259b556c\nmat4 rotationMatrix(vec3 axis, float angle) {\n    axis = normalize(axis);\n    float s = sin(angle);\n    float c = cos(angle);\n    float oc = 1.0 - c;\n    return mat4(oc * axis.x * axis.x + c,           oc * axis.x * axis.y - axis.z * s,  oc * axis.z * axis.x + axis.y * s,  0.0,\n                oc * axis.x * axis.y + axis.z * s,  oc * axis.y * axis.y + c,           oc * axis.y * axis.z - axis.x * s,  0.0,\n                oc * axis.z * axis.x - axis.y * s,  oc * axis.y * axis.z + axis.x * s,  oc * axis.z * axis.z + c,           0.0,\n                0.0,                                0.0,                                0.0,                                1.0);\n}\nvec3 rotate(vec3 v, vec3 axis, float angle) {\n\tmat4 m = rotationMatrix(axis, angle);\n\treturn (m * vec4(v, 1.0)).xyz;\n}\n\n// build scene\nfloat sdf(vec3 position) {\n  vec3 correctedS1 = vec3(sphere1.xy * resolution.zw, 0.0);\n  float sphere1 = sdfSphere(position + correctedS1, 0.2);\n\n  vec3 correctedS2 = vec3(sphere2.xy * resolution.zw, 0.0);\n  float sphere2 = sdfSphere(position + correctedS2, 0.175);\n\n  vec3 correctedS3 = vec3(sphere3.xy * resolution.zw, 0.0);\n  float sphere3 = sdfSphere(position + correctedS3, 0.15);\n\n  float scene = 1.0;\n  scene = smin(scene, sphere1, 0.2);\n  scene = smin(scene, sphere2, 0.2);\n  scene = smin(scene, sphere3, 0.2);\n  return scene;\n}\n\n// also nicked\nvec3 getNormalAtPoint(vec3 point) {\n  return normalize(vec3(sdf(point + h.xyy) - sdf(point - h.xyy),\n                        sdf(point + h.yxy) - sdf(point - h.yxy),\n                        sdf(point + h.yyx) - sdf(point - h.yyx)));\n}\n\nvoid main () {\n  // background\n  float distToCenter = length(vUv - vec2(0.5));\n\n  vec3 color1 = vec3(0.9);\n  vec3 color2 = vec3(0.65);\n  vec3 color = mix(color1, color2, distToCenter);\n\n  vec3 cameraPos = vec3(0.0, 0.0, 2.5);\n  vec2 correctedUV = (vUv - vec2(0.5)) * resolution.zw;\n  vec3 rayDir = normalize(vec3(correctedUV, -1.0)); // -1 z value is to ensure the ray is cast from camera to origin\n\n  vec3 rayPos = cameraPos;\n  float t = 0.0;\n  float tMax = 5.0;\n  float closenessValue = 0.0001;\n  float finalIters = 0.0;\n\n  for (int i = 0; i < noInterations; i++) {\n    vec3 pos = cameraPos + t * rayDir;\n    float dist = sdf(pos);\n    finalIters = float(i);\n    if (dist < closenessValue || t > tMax) break;\n    t += dist;\n  }\n\n  finalIters = finalIters / float(noInterations);\n\n  if (t < tMax) {\n    vec3 pos = cameraPos + t * rayDir;\n    vec3 normal = getNormalAtPoint(pos);\n    float diff = dot(lightPos, normal);\n    vec2 matcapUV = getMatcap(rayDir, normal);\n\n    color = texture2D(matcap, matcapUV).rgb;\n    if (finalIters > 0.15) {\n      color += vec3(pow(finalIters, 1.0));\n    }\n  }\n\n  gl_FragColor = vec4(color, 1.0);\n}";
 },{}],2:[function(require,module,exports){
 (function (global){(function (){
 "use strict";
@@ -12,6 +12,12 @@ global.THREE = require("three");
 const canvasSketch = require("canvas-sketch");
 const matcap_shiny_red = "./resources/matcap_shiny_red.jpeg";
 const matcap_pink = "./resources/matcap_pink.jpeg";
+const matcap_green = "./resources/matcap_green.png";
+const matcap_angel = "./resources/matcap_angel.png";
+const matcap_solar = "./resources/matcap_solar.png";
+const lerp = (a, b, t) => {
+  return a + (b - a) * t;
+};
 const settings = {
   // Make the loop animated
   animate: true,
@@ -41,13 +47,27 @@ const sketch = ({
 
   // Setup a geometry
   const geometry = new THREE.PlaneGeometry(frustumSize, frustumSize, 1, 1);
-
+  const sphere1 = new THREE.Vector2();
+  const sphere2 = new THREE.Vector2();
+  const sphere3 = new THREE.Vector2();
+  const mouse = new THREE.Vector2();
   // Setup a material
   const material = new THREE.ShaderMaterial({
     vertexShader: _vertex.default,
     fragmentShader: _fragment.default,
     uniforms: {
-      resolution: new THREE.Vector4(),
+      resolution: {
+        value: new THREE.Vector4()
+      },
+      sphere1: {
+        value: sphere1
+      },
+      sphere2: {
+        value: sphere2
+      },
+      sphere3: {
+        value: sphere3
+      },
       // mbIterations: 1,
       mbBailout: 6.0,
       mbPower: 6.0,
@@ -55,7 +75,7 @@ const sketch = ({
         value: 0.0
       },
       matcap: {
-        value: textureLoader.load(matcap_shiny_red)
+        value: textureLoader.load(matcap_angel)
       }
     },
     side: THREE.DoubleSide
@@ -78,22 +98,26 @@ const sketch = ({
       renderer.setSize(viewportWidth, viewportHeight, false);
       camera.aspect = viewportWidth / viewportHeight;
       camera.updateProjectionMatrix();
-      console.log(material.uniforms.resolution);
+      const mouseListener = e => {
+        mouse.x = e.pageX / viewportWidth * 2 - 1;
+        mouse.y = e.pageY / viewportHeight * 2 - 1;
+      };
+      window.removeEventListener("mousemove", mouseListener);
+      window.addEventListener("mousemove", mouseListener);
       if (material.uniforms.resolution) {
-        material.uniforms.resolution.x = viewportWidth;
-        material.uniforms.resolution.y = viewportHeight;
-        let resolutionZ;
-        let resolutionW;
+        material.uniforms.resolution.value.x = viewportWidth;
+        material.uniforms.resolution.value.y = viewportHeight;
+        let a1;
+        let a2;
         if (viewportHeight / viewportWidth > 1) {
-          resolutionZ = viewportWidth / viewportHeight;
-          resolutionW = 1;
+          a1 = viewportWidth / viewportHeight;
+          a2 = 1;
         } else {
-          resolutionZ = 1;
-          resolutionW = viewportWidth / viewportHeight;
+          a1 = 1;
+          a2 = viewportHeight / viewportWidth;
         }
-        material.uniforms.resolution.z = resolutionZ;
-        material.uniforms.resolution.w = resolutionW;
-        console.log("in if:", material.uniforms.resolution);
+        material.uniforms.resolution.value.z = a1;
+        material.uniforms.resolution.value.w = a2;
       }
     },
     // Update & render your scene here
@@ -101,6 +125,12 @@ const sketch = ({
       time
     }) {
       material.uniforms.time.value = time;
+      sphere1.x = lerp(sphere1.x, mouse.x, 0.05);
+      sphere1.y = lerp(sphere1.y, mouse.y, 0.05);
+      sphere2.x = lerp(sphere2.x, sphere1.x, 0.1);
+      sphere2.y = lerp(sphere2.y, sphere1.y, 0.1);
+      sphere3.x = lerp(sphere3.x, sphere2.x, 0.1);
+      sphere3.y = lerp(sphere3.y, sphere2.y, 0.1);
       renderer.render(scene, camera);
     },
     // Dispose of events & renderer for cleaner hot-reloading
